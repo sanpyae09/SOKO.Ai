@@ -477,13 +477,36 @@
                         sketchPreview.classList.add('hidden');
                         return;
                     }
-                    uploadedMimeType = file.type;
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        const dataUrl = event.target.result;
-                        uploadedBase64 = dataUrl.split(',')[1];
-                        sketchPreview.src = dataUrl;
-                        sketchPreview.classList.remove('hidden');
+                        const img = new Image();
+                        img.onload = () => {
+                            // Resize to max 768px for the API to process efficiently and prevent payload errors
+                            const MAX_SIZE = 768;
+                            let w = img.width;
+                            let h = img.height;
+                            if (w > MAX_SIZE || h > MAX_SIZE) {
+                                const ratio = Math.min(MAX_SIZE / w, MAX_SIZE / h);
+                                w *= ratio;
+                                h *= ratio;
+                            }
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = w;
+                            tempCanvas.height = h;
+                            const tCtx = tempCanvas.getContext('2d');
+                            
+                            // Fill white background in case of transparent PNGs
+                            tCtx.fillStyle = '#ffffff';
+                            tCtx.fillRect(0, 0, w, h);
+                            tCtx.drawImage(img, 0, 0, w, h);
+                            
+                            uploadedMimeType = 'image/jpeg';
+                            const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.85);
+                            uploadedBase64 = dataUrl.split(',')[1];
+                            sketchPreview.src = dataUrl;
+                            sketchPreview.classList.remove('hidden');
+                        };
+                        img.src = event.target.result;
                     };
                     reader.readAsDataURL(file);
                 });
@@ -501,7 +524,13 @@
                     while (true) {
                         try {
                             const response = await fetch(url, options);
-                            const data = await response.json();
+                            let data;
+                            try {
+                                data = await response.json();
+                            } catch (e) {
+                                throw new Error(`ဆာဗာ ချို့ယွင်းချက် (Status: ${response.status})`);
+                            }
+                            
                             if (!response.ok) {
                                 if (response.status >= 400 && response.status < 500 && response.status !== 429) {
                                     throw new Error(data.error?.message || `Error: ${response.status}`);
@@ -510,7 +539,7 @@
                             }
                             return data;
                         } catch (error) {
-                            if (retries >= maxRetries || error.message.includes("Error: 400")) {
+                            if (retries >= maxRetries || error.message.includes("Error: 400") || error.message.includes("Error: 403")) {
                                 throw error;
                             }
                             await new Promise(resolve => setTimeout(resolve, delays[retries]));
@@ -556,7 +585,9 @@
                             body: JSON.stringify(payload)
                         });
 
-                        const generatedBase64 = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                        const imagePart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData;
+                        const generatedBase64 = imagePart?.data;
+                        const mimeType = imagePart?.mimeType || "image/png";
 
                         if (generatedBase64) {
                             const img = new Image();
@@ -568,10 +599,15 @@
                                 generateAiBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                                 aiLoading.classList.add('hidden');
                             };
-                            img.onerror = () => { throw new Error("ပုံဖော်ပြရာတွင် အခက်အခဲရှိနေပါသည်။"); };
-                            img.src = "data:image/jpeg;base64," + generatedBase64;
+                            img.onerror = () => { 
+                                showError("AI မှ ပုံဖော်ပြရာတွင် အခက်အခဲရှိနေပါသည်။"); 
+                                generateAiBtn.disabled = false;
+                                generateAiBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                aiLoading.classList.add('hidden');
+                            };
+                            img.src = `data:${mimeType};base64,${generatedBase64}`;
                         } else {
-                            throw new Error("ပုံဖန်တီးခြင်း မအောင်မြင်ပါ။ နောက်တစ်ကြိမ် ထပ်ကြိုးစားကြည့်ပါ။");
+                            throw new Error("ပုံဖန်တီးခြင်း မအောင်မြင်ပါ။ နောက်တစ်ကြိမ် ထပ်ကြိုးစားကြည့်ပါ။ (API Error)");
                         }
                     } catch (error) {
                         showError(error.message || "အင်တာနက် သို့မဟုတ် ဆာဗာ ချို့ယွင်းချက်ဖြစ်ပွားနေပါသည်။");
@@ -653,6 +689,7 @@
     </script>
 </body>
 </html>
+
 
 
 
