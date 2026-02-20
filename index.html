@@ -1,612 +1,655 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartSeller AI (Full Version)</title>
-    <!-- Tailwind CSS -->
+    <title>SOKO - AI လိုဂို ဖန်တီးရန်</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Pacifico&family=Oswald:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Padauk:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', 'Padauk', sans-serif; }
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* Hide scrollbar for IE, Edge and Firefox */
-        .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
+        body {
+            font-family: 'Padauk', sans-serif;
+            background-color: #f3f4f6;
+        }
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 100%;
+            height: 40px;
+            border-radius: 0.375rem;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.375rem; }
         
-        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-    <div id="root"></div>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <!-- Header / Navigation -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between py-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-3xl">✨</span>
+                    <h1 class="text-3xl font-extrabold tracking-wider">SOKO</h1>
+                </div>
+                <nav class="mt-4 md:mt-0 flex space-x-6 text-sm font-semibold">
+                    <button id="navHome" class="pb-1 border-b-2 border-white hover:text-indigo-200 transition">မူလစာမျက်နှာ</button>
+                    <button id="navCreate" class="pb-1 border-b-2 border-transparent hover:text-indigo-200 transition">အသစ်ဖန်တီးမည်</button>
+                </nav>
+            </div>
+        </div>
+    </header>
 
-        // --- ICONS (SVG Components) ---
-        const Icons = {
-            Sparkles: ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>,
-            Upload: ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
-            Wand2: ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>,
-            Download: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
-            Copy: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>,
-            RefreshCw: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
-            ShoppingBag: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-            ImageIcon: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
-            FileText: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
-            Palette: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>,
-            LayoutDashboard: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
-            Scissors: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" x2="8.12" y1="4" y2="15.88"/><line x1="14.47" x2="20" y1="14.48" y2="20"/><line x1="8.12" x2="12" y1="8.12" y2="12"/></svg>,
-            ArrowLeft: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
-            CheckCircle: ({className, size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-            ChevronDown: ({className, size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>,
-            ChevronUp: ({className, size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m18 15-6-6-6 6"/></svg>
-        };
-
-        function App() {
-            // --- STATE MANAGEMENT ---
-            const [currentView, setCurrentView] = useState('home'); 
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        
+        <!-- ================= HOME VIEW ================= -->
+        <div id="homeView" class="space-y-12 animate-fade-in">
             
-            // Product Studio States
-            const [selectedImage, setSelectedImage] = useState(null);
-            const [result, setResult] = useState(null); 
-            const [selectedVibe, setSelectedVibe] = useState('studio');
-            const [customBackground, setCustomBackground] = useState(''); 
-            const [productName, setProductName] = useState('');
-            const [scriptLength, setScriptLength] = useState('medium'); 
-            const [imageSize, setImageSize] = useState('1:1'); 
-            const [showDetails, setShowDetails] = useState(false);
-            const [price, setPrice] = useState('');
-            const [quantity, setQuantity] = useState('');
-            const [location, setLocation] = useState('');
-            const [contact, setContact] = useState('');
-            const [customDetails, setCustomDetails] = useState('');
-            const [isGeneratingImg, setIsGeneratingImg] = useState(false);
-            const [isGeneratingScript, setIsGeneratingScript] = useState(false);
-            const [errorImg, setErrorImg] = useState('');
-            const [errorScript, setErrorScript] = useState('');
+            <!-- Hero Section -->
+            <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200 px-4">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">SOKO မှ ကြိုဆိုပါသည်</h2>
+                <p class="text-gray-600 mb-8 max-w-2xl mx-auto text-lg">သင့်လုပ်ငန်းနှင့် အမှတ်တံဆိပ်အတွက် ထူးခြားဆန်းသစ်သော လိုဂိုများကို AI နည်းပညာဖြင့် အလွယ်တကူ ဖန်တီးသိမ်းဆည်းလိုက်ပါ။</p>
+                <button id="startCreateBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transform transition hover:scale-105 text-lg">
+                    စတင် ဖန်တီးမည်
+                </button>
+            </div>
+
+            <!-- Gallery Section -->
+            <div>
+                <div class="flex items-center justify-between mb-6 border-b pb-2">
+                    <h3 class="text-2xl font-bold text-gray-800">မိမိဖန်တီးထားသော လိုဂိုများ</h3>
+                    <span class="text-sm text-gray-500" id="logoCount">စုစုပေါင်း: ၀ ပုံ</span>
+                </div>
+                
+                <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Gallery items will be injected here by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= EDITOR VIEW ================= -->
+        <div id="editorView" class="hidden flex-col lg:flex-row gap-8 items-start">
             
-            // Logo Maker States
-            const [logoType, setLogoType] = useState('icon');
-            const [logoPrompt, setLogoPrompt] = useState('');
-            const [logoText, setLogoText] = useState('');
-            const [logoStyle, setLogoStyle] = useState('minimalist');
-            const [logoMaterial, setLogoMaterial] = useState('flat'); 
-            const [logoMood, setLogoMood] = useState('professional'); 
-            const [logoColorType, setLogoColorType] = useState('auto');
-            const [customColor, setCustomColor] = useState('#000000');
-            const [logoShape, setLogoShape] = useState('any');
-            const [isGeneratingLogo, setIsGeneratingLogo] = useState(false);
-            const [generatedLogo, setGeneratedLogo] = useState(null);
-            const [logoError, setLogoError] = useState('');
-
-            const [toast, setToast] = useState('');
-
-            // API KEY - Important: Use valid API Key here
-            const apiKey = ""; 
-
-            const showToastMsg = (msg) => {
-                setToast(msg);
-                setTimeout(() => setToast(''), 3000);
-            };
-
-            const fetchWithRetry = async (url, options, retries = 5) => {
-                const delays = [1000, 2000, 4000, 8000, 16000];
-                for (let i = 0; i < retries; i++) {
-                    try {
-                        const res = await fetch(url, options);
-                        if (!res.ok) {
-                            const errData = await res.json().catch(()=>({}));
-                            throw new Error(errData.error?.message || `HTTP error! status: ${res.status}`);
-                        }
-                        return await res.json();
-                    } catch (err) {
-                        if (i === retries - 1) throw err;
-                        await new Promise(r => setTimeout(r, delays[i]));
-                    }
-                }
-            };
-
-            const handleImageUpload = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setSelectedImage(reader.result);
-                        setResult(null);
-                        setErrorImg('');
-                        setErrorScript('');
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-
-            const getBase64AndMime = () => {
-                if (!selectedImage) return null;
-                const base64Data = selectedImage.split(',')[1];
-                const mimeType = selectedImage.match(/[^:]\w+\/[\w-+\d.]+(?=;|,)/)[0];
-                return { base64Data, mimeType };
-            };
-
-            // --- PRODUCT STUDIO FUNCTIONS ---
-            const generateScript = async (base64Data, mimeType) => {
-                setIsGeneratingScript(true);
-                setErrorScript('');
-                try {
-                    let vibeDescription = "";
-                    switch (selectedVibe) {
-                        case 'studio': vibeDescription = "Professional Studio White"; break;
-                        case 'nature': vibeDescription = "Natural Outdoor"; break;
-                        case 'luxury': vibeDescription = "Premium Luxury Dark"; break;
-                        case 'minimalist': vibeDescription = "Clean Minimalist Pastel"; break;
-                        case 'cyberpunk': vibeDescription = "Neon Cyberpunk"; break;
-                        case 'custom': vibeDescription = customBackground; break;
-                        default: vibeDescription = "Professional";
-                    }
-
-                    let prompt = `Role: Expert Copywriter. Task: Write a highly engaging Burmese sales post.\n`;
-                    prompt += `Product: ${productName || 'Product in image'}\n`;
-                    prompt += `Vibe: ${vibeDescription}\n`;
-                    if (price) prompt += `Price: ${price}\n`;
-                    if (quantity) prompt += `Stock: ${quantity}\n`;
-                    if (location) prompt += `Location: ${location}\n`;
-                    if (contact) prompt += `Contact: ${contact}\n`;
-                    if (customDetails) prompt += `Details: ${customDetails}\n`;
+            <!-- Left Panel: Controls -->
+            <div class="w-full lg:w-1/3 space-y-6">
+                
+                <!-- AI Generation Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6 space-y-4 border-t-4 border-indigo-500">
+                    <h2 class="text-xl font-bold border-b pb-2 text-indigo-700">🤖 AI ဖြင့် ပုံကြမ်းကို ပြင်ဆင်မည်</h2>
                     
-                    if (scriptLength === 'short') prompt += "Length: Short & Punchy (2-3 lines).\n";
-                    else if (scriptLength === 'long') prompt += "Length: Detailed & Informative (3-4 paragraphs).\n";
-                    else prompt += "Length: Medium standard post.\n";
-
-                    const textPayload = {
-                        contents: [{
-                            parts: [{ text: prompt }, { inlineData: { mimeType, data: base64Data } }]
-                        }]
-                    };
-
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-                    const response = await fetchWithRetry(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(textPayload)
-                    });
-
-                    const generatedScript = response.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate script.";
-                    setResult(prev => ({ ...prev, script: generatedScript }));
-                } catch (error) {
-                    setErrorScript("စာသားဖန်တီးမှု မအောင်မြင်ပါ။");
-                } finally {
-                    setIsGeneratingScript(false);
-                }
-            };
-
-            const generateImage = async () => {
-                if (!selectedImage) return;
-                setIsGeneratingImg(true);
-                setErrorImg('');
-                try {
-                    const targetW = 1024, targetH = 1024;
-                    let finalW = 1024, finalH = 1024;
-                    if (imageSize === '16:9') { finalH = 576; } 
-                    else if (imageSize === '9:16') { finalW = 576; }
-
-                    const processedDataUrl = await new Promise((resolve) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = targetW; canvas.height = targetH;
-                            const ctx = canvas.getContext('2d');
-                            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, targetW, targetH);
-                            const maxDrawW = finalW * 0.85; const maxDrawH = finalH * 0.85;
-                            const scale = Math.min(maxDrawW / img.width, maxDrawH / img.height);
-                            const drawW = img.width * scale; const drawH = img.height * scale;
-                            const x = (targetW - drawW) / 2; const y = (targetH - drawH) / 2;
-                            ctx.drawImage(img, x, y, drawW, drawH);
-                            resolve(canvas.toDataURL('image/jpeg', 1.0));
-                        };
-                        img.src = selectedImage;
-                    });
-
-                    const targetBase64 = processedDataUrl.split(',')[1];
-                    
-                    // Determine Scene Description
-                    let sceneDescription = "";
-                    if (selectedVibe === 'custom') {
-                        sceneDescription = customBackground;
-                    } else {
-                        const vibePrompts = {
-                            'studio': "a clean, professional white studio backdrop with soft diffused lighting",
-                            'nature': "a beautiful outdoor nature scene with sunlight, leaves and greenery",
-                            'luxury': "a premium, dark, luxurious texture (like marble or velvet) with dramatic golden lighting",
-                            'minimalist': "a simple, clean, pastel-colored minimalist background",
-                            'cyberpunk': "a futuristic neon-lit cyberpunk city street at night with pink and blue lights"
-                        };
-                        sceneDescription = vibePrompts[selectedVibe] || "a professional product photography background";
-                    }
-
-                    // Enhanced Prompt for Realistic Effects
-                    let prompt = `EDIT INSTRUCTION: You are an expert product photographer and retoucher.
-Task: Extract the main product and place it seamlessly into this environment: "${sceneDescription}".
-
-CRITICAL - ENVIRONMENTAL INTERACTION & EFFECTS:
-1. **Physical Interaction:** The product must look like it is physically present in the scene.
-2. **Weather/Texture Effects:** - If the background is icy/snowy, ADD REALISTIC FROST, CONDENSATION, OR SNOW FLAKES directly on the product surface.
-   - If the background is wet/rainy, ADD WATER DROPLETS on the product.
-   - If the background is dusty/desert, add a subtle dust layer.
-   - If the background is neon/colorful, reflect those specific colors on the product's edges (rim lighting).
-3. **Lighting & Shadows:** Cast realistic contact shadows on the ground matching the scene's light source. Match the color temperature.
-4. **Removal:** COMPLETELY REMOVE the original background.
-5. **Restriction:** NO TEXT, NO LOGOS, NO WATERMARKS in the background.`;
-
-                    const imgPayload = {
-                        contents: [{
-                            role: "user",
-                            parts: [{ text: prompt }, { inlineData: { mimeType: 'image/jpeg', data: targetBase64 } }]
-                        }],
-                        generationConfig: { responseModalities: ["IMAGE"] }
-                    };
-                    
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-                    const response = await fetchWithRetry(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(imgPayload)
-                    });
-
-                    const base64EditedImage = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                    if (!base64EditedImage) throw new Error("Failed");
-                    
-                    // Crop Final
-                    const croppedImage = await new Promise((resolve) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = finalW; canvas.height = finalH;
-                            const ctx = canvas.getContext('2d');
-                            const xOffset = -(targetW - finalW) / 2;
-                            const yOffset = -(targetH - finalH) / 2;
-                            ctx.drawImage(img, xOffset, yOffset, targetW, targetH);
-                            resolve(canvas.toDataURL('image/jpeg', 1.0));
-                        };
-                        img.src = `data:image/jpeg;base64,${base64EditedImage}`;
-                    });
-                    
-                    setResult(prev => ({ ...prev, image: croppedImage }));
-                } catch (error) {
-                    setErrorImg("ပုံဖန်တီးမှု မအောင်မြင်ပါ။");
-                } finally {
-                    setIsGeneratingImg(false);
-                }
-            };
-
-            const handleGenerateAll = async () => {
-                const data = getBase64AndMime();
-                if (!data) return;
-                setResult({ image: null, script: null }); 
-                generateImage();
-                generateScript(data.base64Data, data.mimeType);
-            };
-
-            const handleRegenerateImage = () => { generateImage(); };
-            const handleRegenerateScript = () => { 
-                const data = getBase64AndMime();
-                if(data) generateScript(data.base64Data, data.mimeType);
-            };
-
-            const handleDownloadImage = (url) => {
-                if(!url) return;
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `SmartSeller_${Date.now()}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToastMsg("Downloaded!");
-            };
-
-            const copyToClipboard = (text) => {
-                navigator.clipboard.writeText(text);
-                showToastMsg("Copied!");
-            };
-
-            // --- LOGO MAKER LOGIC ---
-            const generateAILogo = async () => {
-                if (logoType === 'icon' && !logoPrompt.trim()) return;
-                if (logoType === 'text' && !logoText.trim()) return;
-                setIsGeneratingLogo(true);
-                setGeneratedLogo(null);
-                setLogoError('');
-
-                try {
-                    let prompt = "";
-                    if (logoType === 'icon') {
-                        prompt = `Create a masterpiece logo icon. Concept: "${logoPrompt}". Style: ${logoStyle}. Material: ${logoMaterial}. Mood: ${logoMood}. `;
-                    } else {
-                        prompt = `Create a creative typography logo for text "${logoText}". Context: ${logoPrompt}. Style: ${logoStyle}. Color: ${logoColorType}. `;
-                    }
-
-                    // Colors
-                    if (logoColorType === 'custom') prompt += `Primary Color Hex: ${customColor}. `;
-                    else if (logoColorType !== 'auto') prompt += `Color Palette: ${logoColorType}. `;
-
-                    if (logoShape !== 'any') prompt += `Shape: ${logoShape}. `;
-
-                    if (logoType === 'icon') prompt += " CRITICAL: Generate ONLY the icon. NO TEXT.";
-                    else prompt += ` CRITICAL: Text "${logoText}" must be clear.`;
-
-                    const payload = {
-                        instances: { prompt: prompt },
-                        parameters: { sampleCount: 1 }
-                    };
-                    
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-                    const response = await fetchWithRetry(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const base64Img = response.predictions?.[0]?.bytesBase64Encoded;
-                    if (!base64Img) throw new Error("Failed");
-                    setGeneratedLogo(`data:image/png;base64,${base64Img}`);
-                } catch (e) {
-                    setLogoError("Logo generation failed");
-                } finally {
-                    setIsGeneratingLogo(false);
-                }
-            };
-
-            // --- RENDER UI ---
-            return (
-                <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
-                    {/* Sidebar */}
-                    <div className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col h-full">
-                        <div className="h-16 flex items-center px-6 border-b border-gray-200 gap-2">
-                            <div className="bg-gradient-to-tr from-purple-600 to-blue-500 p-1.5 rounded-lg"><Icons.Sparkles className="text-white"/></div>
-                            <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">SmartSeller AI</span>
-                        </div>
-                        <div className="flex-1 py-6 px-4 space-y-2">
-                            <button onClick={() => setCurrentView('home')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${currentView==='home' ? 'bg-purple-50 text-purple-700' : 'hover:bg-gray-50'}`}><Icons.LayoutDashboard /> Home</button>
-                            <button onClick={() => setCurrentView('product-studio')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${currentView==='product-studio' ? 'bg-purple-50 text-purple-700' : 'hover:bg-gray-50'}`}><Icons.ImageIcon /> Product Studio</button>
-                            <button onClick={() => setCurrentView('logo-maker')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${currentView==='logo-maker' ? 'bg-purple-50 text-purple-700' : 'hover:bg-gray-50'}`}><Icons.Palette /> Logo Maker</button>
-                            <button onClick={() => setCurrentView('bg-remover')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${currentView==='bg-remover' ? 'bg-purple-50 text-purple-700' : 'hover:bg-gray-50'}`}><Icons.Scissors /> Bg Remover</button>
-                            <button onClick={() => setCurrentView('copywriter')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${currentView==='copywriter' ? 'bg-purple-50 text-purple-700' : 'hover:bg-gray-50'}`}><Icons.FileText /> AI Copywriter</button>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">ပုံကြမ်း (Sketch) ထည့်ရန်</label>
+                        <input type="file" id="sketchInput" accept="image/*" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        <img id="sketchPreview" class="mt-2 hidden max-h-32 rounded border border-gray-200 mx-auto" alt="Sketch Preview">
                     </div>
 
-                    {/* Main Content */}
-                    <div className="flex-1 flex flex-col overflow-hidden relative">
-                        {/* Mobile Header */}
-                        <div className="md:hidden bg-white h-16 border-b border-gray-200 flex items-center px-4">
-                            <button onClick={() => setCurrentView('home')} className="flex items-center gap-2">
-                                <Icons.Sparkles className="h-6 w-6 text-purple-600" />
-                                <span className="font-bold text-lg text-gray-900">SmartSeller AI</span>
-                            </button>
+                    <!-- Enhanced Style Dropdown added -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">ဒီဇိုင်း စတိုင် (Style)</label>
+                        <select id="aiStyle" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <option value="flat minimalist vector art, clean background">ရိုးရှင်းသော (Minimalist)</option>
+                            <option value="3D rendered, highly detailed, glossy">3D ပုံစံ (3D Render)</option>
+                            <option value="cute mascot character, vibrant colors">ကာတွန်း/အရုပ် (Mascot)</option>
+                            <option value="vintage retro hand-drawn badge">ရှေးဟောင်း (Vintage)</option>
+                            <option value="neon cyberpunk glowing logo, dark background">နီယွန်မီးရောင် (Neon)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">စိတ်ကြိုက် ပုံစံရေးပြရန် (Prompt)</label>
+                        <textarea id="aiPrompt" rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans text-sm" placeholder="ဥပမာ - Blue and white color scheme..."></textarea>
+                    </div>
+
+                    <button id="generateAiBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow transition flex justify-center items-center gap-2">
+                        <span>AI ဖြင့် ဖန်တီးမည်</span>
+                    </button>
+                    
+                    <div id="aiLoading" class="hidden flex items-center justify-center space-x-2 text-indigo-600 font-semibold py-2">
+                        <div class="loader"></div>
+                        <span>ဖန်တီးနေပါသည်...</span>
+                    </div>
+                    
+                    <div id="errorBox" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm" role="alert">
+                        <span class="block sm:inline" id="errorText"></span>
+                    </div>
+
+                    <button id="clearAiBtn" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-md shadow transition text-sm">
+                        AI ပုံကို ဖျက်မည်
+                    </button>
+                </div>
+
+                <!-- Standard Controls Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
+                    <h2 class="text-xl font-bold border-b pb-2">စာသားနှင့် အရောင် ပြင်ဆင်ရန်</h2>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">လိုဂို စာသား</label>
+                        <input type="text" id="logoText" value="SOKO Brand" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">ဖောင့် အမျိုးအစား</label>
+                        <select id="fontFamily" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Montserrat, sans-serif">Montserrat (Modern)</option>
+                            <option value="Pacifico, cursive">Pacifico (Handwriting)</option>
+                            <option value="Oswald, sans-serif">Oswald (Bold/Impact)</option>
+                            <option value="Playfair Display, serif">Playfair Display (Elegant)</option>
+                            <option value="Arial, sans-serif">Arial (Basic)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">သင်္ကေတ (Icon)</label>
+                        <select id="iconType" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg">
+                            <option value="none" selected>မထည့်ပါ</option>
+                            <option value="diamond">💎 စိန်</option>
+                            <option value="star">⭐ ကြယ်</option>
+                            <option value="leaf">🍃 သစ်ရွက်</option>
+                            <option value="rocket">🚀 ဒုံးပျံ</option>
+                            <option value="coffee">☕ ကော်ဖီ</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">စာသား အရောင်</label>
+                            <input type="color" id="textColor" value="#1f2937">
                         </div>
-
-                        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                            {/* HOME VIEW */}
-                            {currentView === 'home' && (
-                                <div className="max-w-4xl mx-auto animate-fade-in">
-                                    <h1 className="text-3xl font-bold mb-2">မင်္ဂလာပါ 👋</h1>
-                                    <p className="text-gray-600 mb-8">Choose a tool to start:</p>
-                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <div onClick={() => setCurrentView('product-studio')} className="bg-white p-6 rounded-2xl border border-purple-100 shadow-sm cursor-pointer hover:shadow-md transition-all">
-                                            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4"><Icons.Sparkles className="text-purple-600"/></div>
-                                            <h3 className="text-lg font-bold">Product Studio</h3>
-                                            <p className="text-sm text-gray-500">AI product photos & scripts.</p>
-                                        </div>
-                                        <div onClick={() => setCurrentView('logo-maker')} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-all">
-                                            <div className="w-12 h-12 bg-pink-50 rounded-xl flex items-center justify-center mb-4"><Icons.Palette className="text-pink-600"/></div>
-                                            <h3 className="text-lg font-bold">Logo Maker</h3>
-                                            <p className="text-sm text-gray-500">Create custom logos with AI.</p>
-                                        </div>
-                                        <div onClick={() => setCurrentView('bg-remover')} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-all">
-                                            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4"><Icons.Scissors className="text-blue-600"/></div>
-                                            <h3 className="text-lg font-bold">Bg Remover</h3>
-                                            <p className="text-sm text-gray-500">Remove backgrounds instantly.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* PRODUCT STUDIO VIEW */}
-                            {currentView === 'product-studio' && (
-                                <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8 animate-fade-in">
-                                    <div className="lg:col-span-5 space-y-5">
-                                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                            <h3 className="font-bold mb-3 flex items-center gap-2"><span className="bg-purple-100 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> Upload Image</h3>
-                                            <div className="border-2 border-dashed rounded-xl p-4 text-center relative hover:bg-gray-50 group">
-                                                <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                                                {selectedImage ? (
-                                                    <div className="relative"><img src={selectedImage} className="h-40 mx-auto object-contain rounded" />
-                                                    <button onClick={(e)=>{e.preventDefault();setSelectedImage(null)}} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"><Icons.RefreshCw size={12}/></button></div>
-                                                ) : <div className="py-8 text-gray-400 flex flex-col items-center"><Icons.Upload /><span className="text-sm mt-2">Click to upload</span></div>}
-                                            </div>
-                                        </div>
-                                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                                            <h3 className="font-bold flex items-center gap-2"><span className="bg-purple-100 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> Settings</h3>
-                                            
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Product Name</label>
-                                                <input type="text" placeholder="e.g. Speed Energy" className="w-full border rounded-lg p-2 text-sm mt-1" value={productName} onChange={e => setProductName(e.target.value)} />
-                                            </div>
-
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Vibe</label>
-                                                <div className="grid grid-cols-3 gap-2 mt-1">
-                                                    {['studio', 'nature', 'luxury', 'minimalist', 'cyberpunk', 'custom'].map(v => 
-                                                        <button key={v} onClick={()=>setSelectedVibe(v)} className={`border rounded p-2 text-xs capitalize ${selectedVibe===v ? 'bg-purple-50 border-purple-500 text-purple-700':''}`}>{v}</button>
-                                                    )}
-                                                </div>
-                                                {selectedVibe === 'custom' && <input type="text" placeholder="Describe background..." className="w-full border rounded-lg p-2 text-sm mt-2 bg-purple-50" value={customBackground} onChange={e=>setCustomBackground(e.target.value)}/>}
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Size</label>
-                                                    <div className="flex bg-gray-100 p-1 rounded mt-1">
-                                                        {['1:1', '9:16', '16:9'].map(s => <button key={s} onClick={()=>setImageSize(s)} className={`flex-1 py-1 text-xs rounded ${imageSize===s?'bg-white shadow':''}`}>{s}</button>)}
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Length</label>
-                                                    <div className="flex bg-gray-100 p-1 rounded mt-1">
-                                                        {['short', 'medium', 'long'].map(s => <button key={s} onClick={()=>setScriptLength(s)} className={`flex-1 py-1 text-xs rounded capitalize ${scriptLength===s?'bg-white shadow':''}`}>{s}</button>)}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="border rounded-lg overflow-hidden">
-                                                <button onClick={()=>setShowDetails(!showDetails)} className="w-full p-3 bg-gray-50 flex justify-between items-center text-xs font-bold">Add Details (Price, etc.) {showDetails ? <Icons.ChevronUp size={14}/> : <Icons.ChevronDown size={14}/>}</button>
-                                                {showDetails && <div className="p-3 space-y-2 bg-white">
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <input type="text" placeholder="Price" className="border rounded p-2 text-xs" value={price} onChange={e=>setPrice(e.target.value)}/>
-                                                        <input type="text" placeholder="Stock" className="border rounded p-2 text-xs" value={quantity} onChange={e=>setQuantity(e.target.value)}/>
-                                                    </div>
-                                                    <input type="text" placeholder="Location" className="w-full border rounded p-2 text-xs" value={location} onChange={e=>setLocation(e.target.value)}/>
-                                                    <input type="text" placeholder="Contact" className="w-full border rounded p-2 text-xs" value={contact} onChange={e=>setContact(e.target.value)}/>
-                                                    <textarea placeholder="Other details..." rows="2" className="w-full border rounded p-2 text-xs" value={customDetails} onChange={e=>setCustomDetails(e.target.value)}></textarea>
-                                                </div>}
-                                            </div>
-
-                                            <button onClick={handleGenerateAll} disabled={!selectedImage || isGeneratingImg} className="w-full bg-purple-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-700 disabled:opacity-50 shadow-lg">
-                                                {isGeneratingImg ? <Icons.RefreshCw className="animate-spin" /> : <Icons.Wand2 />} Generate All
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="lg:col-span-7 space-y-4">
-                                        {/* Result Image */}
-                                        <div className="bg-white p-4 rounded-xl border shadow-sm min-h-[300px] flex items-center justify-center relative">
-                                            {isGeneratingImg ? <div className="text-center"><div className="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>Processing Image...</div> 
-                                            : result?.image ? (
-                                                <div className="relative group w-full text-center">
-                                                    <img src={result.image} className="max-h-[500px] max-w-full rounded shadow mx-auto" />
-                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <button onClick={()=>handleDownloadImage(result.image)} className="bg-white text-gray-900 px-4 py-2 rounded-full font-bold flex gap-2"><Icons.Download size={18}/> Download</button>
-                                                    </div>
-                                                </div>
-                                            ) : <div className="text-gray-400 flex flex-col items-center"><Icons.ShoppingBag size={32} /> Result will appear here</div>}
-                                            {/* Regenerate Image Button */}
-                                            {result?.image && !isGeneratingImg && <button onClick={handleRegenerateImage} className="absolute top-2 right-2 bg-white p-2 rounded shadow text-purple-600 text-xs flex items-center gap-1 border"><Icons.RefreshCw size={12}/> Re-do Image</button>}
-                                        </div>
-
-                                        {/* Result Script */}
-                                        <div className="bg-white p-4 rounded-xl border shadow-sm relative">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-xs font-bold text-purple-600 uppercase">Sales Script</span>
-                                                <div className="flex gap-2">
-                                                    <button onClick={()=>copyToClipboard(result?.script)} disabled={!result?.script} className="text-gray-500 hover:text-gray-900"><Icons.Copy size={16}/></button>
-                                                    <button onClick={handleRegenerateScript} disabled={isGeneratingScript || !selectedImage} className="text-purple-600 hover:text-purple-800"><Icons.RefreshCw size={16} className={isGeneratingScript?"animate-spin":""}/></button>
-                                                </div>
-                                            </div>
-                                            {isGeneratingScript ? <div className="py-8 text-center text-gray-400 text-sm">Writing script...</div> 
-                                            : result?.script ? <div className="text-sm leading-relaxed whitespace-pre-wrap bg-purple-50 p-3 rounded">{result.script}</div>
-                                            : <div className="text-gray-400 text-sm italic">Script will appear here...</div>}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* LOGO MAKER VIEW */}
-                            {currentView === 'logo-maker' && (
-                                <div className="max-w-5xl mx-auto grid lg:grid-cols-12 gap-8 animate-fade-in">
-                                    <div className="lg:col-span-5 space-y-4">
-                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                                            <h3 className="font-bold text-lg flex items-center gap-2"><Icons.Palette className="text-pink-600"/> AI Logo Maker</h3>
-                                            
-                                            <div className="flex bg-gray-100 p-1 rounded-xl">
-                                                <button onClick={()=>setLogoType('icon')} className={`flex-1 py-2 text-sm rounded-lg transition-all ${logoType==='icon'?'bg-white shadow text-pink-600 font-bold':''}`}>Icon Logo</button>
-                                                <button onClick={()=>setLogoType('text')} className={`flex-1 py-2 text-sm rounded-lg transition-all ${logoType==='text'?'bg-white shadow text-pink-600 font-bold':''}`}>Text Logo</button>
-                                            </div>
-
-                                            {logoType === 'icon' ? (
-                                                <textarea placeholder="Describe your logo (e.g., Lion head, Coffee bean)..." className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-pink-500 outline-none" rows="3" value={logoPrompt} onChange={e=>setLogoPrompt(e.target.value)} />
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    <input type="text" placeholder="Text (e.g., SMART)" className="w-full border rounded-lg p-2 text-sm" value={logoText} onChange={e=>setLogoText(e.target.value)} />
-                                                    <input type="text" placeholder="Theme (e.g., Floral, Fire)" className="w-full border rounded-lg p-2 text-sm" value={logoPrompt} onChange={e=>setLogoPrompt(e.target.value)} />
-                                                </div>
-                                            )}
-
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <label className="text-xs font-bold text-gray-500">Style</label>
-                                                    <select className="w-full border rounded p-2 text-sm bg-white" value={logoStyle} onChange={e=>setLogoStyle(e.target.value)}>
-                                                        {['minimalist','3d','vintage','mascot','abstract','watercolor','graffiti'].map(s=><option key={s} value={s}>{s}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-bold text-gray-500">Material</label>
-                                                    <select className="w-full border rounded p-2 text-sm bg-white" value={logoMaterial} onChange={e=>setLogoMaterial(e.target.value)}>
-                                                        {['flat','metallic','glass','neon','wood','sketch'].map(s=><option key={s} value={s}>{s}</option>)}
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <label className="text-xs font-bold text-gray-500">Mood</label>
-                                                    <select className="w-full border rounded p-2 text-sm bg-white" value={logoMood} onChange={e=>setLogoMood(e.target.value)}>
-                                                        {['professional','luxury','playful','tech','organic'].map(s=><option key={s} value={s}>{s}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-bold text-gray-500">Color</label>
-                                                    <div className="flex gap-1">
-                                                        <select className="w-full border rounded p-2 text-sm bg-white" value={logoColorType} onChange={e=>setLogoColorType(e.target.value)}>
-                                                            <option value="auto">Auto</option>
-                                                            <option value="custom">Custom</option>
-                                                            <option value="gold">Gold</option>
-                                                            <option value="vibrant">Vibrant</option>
-                                                            <option value="monochrome">B&W</option>
-                                                        </select>
-                                                        {logoColorType === 'custom' && <input type="color" className="h-9 w-9 rounded cursor-pointer" value={customColor} onChange={e=>setCustomColor(e.target.value)}/>}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <button onClick={generateAILogo} disabled={isGeneratingLogo} className="w-full bg-pink-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-pink-700 disabled:opacity-50 shadow-lg transition-transform hover:-translate-y-0.5">
-                                                {isGeneratingLogo ? <Icons.RefreshCw className="animate-spin"/> : <Icons.Wand2 />} Create Logo
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="lg:col-span-7">
-                                        <div className="bg-white rounded-2xl shadow-sm border p-6 h-full min-h-[400px] flex items-center justify-center relative">
-                                            {isGeneratingLogo ? <div className="text-center"><div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div><p className="text-gray-500 animate-pulse">Designing your logo...</p></div>
-                                            : generatedLogo ? <div className="text-center w-full"><img src={generatedLogo} className="max-w-xs md:max-w-md h-auto object-contain mx-auto mb-6 shadow-lg rounded-lg bg-gray-50 p-4" /><button onClick={()=>handleDownloadImage(generatedLogo)} className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold flex items-center gap-2 mx-auto shadow-xl hover:scale-105 transition-transform"><Icons.Download size={18}/> Save Logo</button></div>
-                                            : <div className="text-center text-gray-400"><div className="bg-pink-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Palette className="text-pink-300" size={32}/></div><p>Adjust settings and create something amazing</p></div>}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* PLACEHOLDER VIEWS */}
-                            {(currentView === 'bg-remover' || currentView === 'copywriter') && (
-                                <div className="flex flex-col items-center justify-center h-full min-h-[50vh] animate-fade-in text-center p-8">
-                                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6"><Icons.Sparkles className="w-10 h-10 text-gray-400" /></div>
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">{currentView === 'bg-remover' ? 'Background Remover' : 'AI Copywriter'}</h2>
-                                    <p className="text-gray-500 max-w-md mb-8">This tool is coming soon. Stay tuned!</p>
-                                    <button onClick={() => setCurrentView('home')} className="px-6 py-2.5 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 flex items-center gap-2"><Icons.ArrowLeft size={18} /> Back to Menu</button>
-                                </div>
-                            )}
-                        </main>
-
-                        {/* TOAST MESSAGE */}
-                        {toast && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 z-50 animate-fade-in"><Icons.CheckCircle size={18} className="text-green-400"/> {toast}</div>}
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">နောက်ခံ အရောင်</label>
+                            <input type="color" id="bgColor" value="#ffffff">
+                        </div>
                     </div>
                 </div>
-            );
-        }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+            </div>
+
+            <!-- Right Panel: Preview -->
+            <div class="w-full lg:w-2/3 flex flex-col items-center space-y-6">
+                <div class="w-full bg-white rounded-xl shadow-lg p-4 flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
+                    <p class="absolute top-4 left-4 text-xs text-gray-400 font-semibold uppercase tracking-widest">Preview (နမူနာ)</p>
+                    
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-2 shadow-sm bg-gray-50 relative">
+                        <canvas id="logoCanvas" width="1024" height="1024" class="w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] rounded object-contain shadow-sm bg-white"></canvas>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row w-full gap-4 px-4 lg:px-0">
+                    <button id="downloadBtn" class="flex-1 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-bold py-3 px-6 rounded-full shadow transition flex justify-center items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        <span>ပုံကို ဒေါင်းလုဒ်ဆွဲမည်</span>
+                    </button>
+                    
+                    <button id="saveGalleryBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition hover:scale-105 flex justify-center items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                        <span>SOKO ပြခန်းသို့ သိမ်းမည်</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400 text-center py-6 mt-auto">
+        <p class="text-sm">© 2026 SOKO AI Logo Maker. All rights reserved.</p>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0 z-50 flex items-center space-x-2">
+        <span id="toastMsg">အောင်မြင်ပါသည်!</span>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold mb-2 text-gray-800">ဖျက်ရန် သေချာပါသလား?</h3>
+            <p class="text-gray-600 mb-6 text-sm">ဤလိုဂိုကို ဖျက်လိုက်ပါက ပြန်လည်ရယူ၍ မရနိုင်ပါ။</p>
+            <div class="flex justify-end space-x-3">
+                <button id="cancelDeleteBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded font-semibold transition">မလုပ်တော့ပါ</button>
+                <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold transition">ဖျက်မည်</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        (function() {
+            const apiKey = ""; 
+            const sokoStorageKey = 'soko_saved_logos';
+
+            function initApp() {
+                const canvas = document.getElementById('logoCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                
+                // View Management Elements
+                const homeView = document.getElementById('homeView');
+                const editorView = document.getElementById('editorView');
+                const navHome = document.getElementById('navHome');
+                const navCreate = document.getElementById('navCreate');
+                const startCreateBtn = document.getElementById('startCreateBtn');
+                
+                // UI Elements - Text/Style
+                const logoTextInput = document.getElementById('logoText');
+                const fontFamilyInput = document.getElementById('fontFamily');
+                const iconTypeInput = document.getElementById('iconType');
+                const textColorInput = document.getElementById('textColor');
+                const bgColorInput = document.getElementById('bgColor');
+                const downloadBtn = document.getElementById('downloadBtn');
+                const saveGalleryBtn = document.getElementById('saveGalleryBtn');
+
+                // UI Elements - AI
+                const sketchInput = document.getElementById('sketchInput');
+                const sketchPreview = document.getElementById('sketchPreview');
+                const aiStyleInput = document.getElementById('aiStyle');
+                const aiPromptInput = document.getElementById('aiPrompt');
+                const generateAiBtn = document.getElementById('generateAiBtn');
+                const aiLoading = document.getElementById('aiLoading');
+                const errorBox = document.getElementById('errorBox');
+                const errorText = document.getElementById('errorText');
+                const clearAiBtn = document.getElementById('clearAiBtn');
+
+                // State
+                let uploadedBase64 = null;
+                let uploadedMimeType = null;
+                let aiGeneratedImage = null;
+                let logoToDelete = null;
+
+                const iconMap = {
+                    'diamond': '💎', 'star': '⭐', 'leaf': '🍃', 
+                    'rocket': '🚀', 'coffee': '☕'
+                };
+
+                // --- View Routing ---
+                function showHome() {
+                    homeView.classList.remove('hidden');
+                    editorView.classList.remove('flex');
+                    editorView.classList.add('hidden');
+                    
+                    navHome.classList.replace('border-transparent', 'border-white');
+                    navCreate.classList.replace('border-white', 'border-transparent');
+                    renderGallery();
+                }
+
+                function showEditor() {
+                    homeView.classList.add('hidden');
+                    editorView.classList.remove('hidden');
+                    editorView.classList.add('flex');
+                    
+                    navCreate.classList.replace('border-transparent', 'border-white');
+                    navHome.classList.replace('border-white', 'border-transparent');
+                    drawLogo();
+                }
+
+                navHome.addEventListener('click', showHome);
+                navCreate.addEventListener('click', showEditor);
+                startCreateBtn.addEventListener('click', showEditor);
+
+                // --- Toast & Modal Logic ---
+                function showToast(msg, isError = false) {
+                    const toast = document.getElementById('toast');
+                    const toastMsg = document.getElementById('toastMsg');
+                    toastMsg.textContent = msg;
+                    
+                    if(isError) {
+                        toast.classList.replace('bg-green-600', 'bg-red-600');
+                    } else {
+                        toast.classList.replace('bg-red-600', 'bg-green-600');
+                    }
+
+                    toast.classList.remove('translate-y-20', 'opacity-0');
+                    
+                    setTimeout(() => {
+                        toast.classList.add('translate-y-20', 'opacity-0');
+                    }, 3000);
+                }
+
+                // Global delete request for inline onclick
+                window.requestDelete = function(id) {
+                    logoToDelete = id;
+                    document.getElementById('confirmModal').classList.remove('hidden');
+                };
+
+                // Global download for gallery items
+                window.downloadSavedLogo = async function(id) {
+                    const logos = JSON.parse(localStorage.getItem(sokoStorageKey) || '[]');
+                    const logo = logos.find(l => l.id === id);
+                    if (logo) {
+                        try {
+                            const res = await fetch(logo.image);
+                            const blob = await res.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `${logo.name}.png`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                        } catch (e) {
+                            // Fallback
+                            const link = document.createElement('a');
+                            link.href = logo.image;
+                            link.download = `${logo.name}.png`;
+                            link.click();
+                        }
+                    }
+                };
+
+                document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+                    logoToDelete = null;
+                    document.getElementById('confirmModal').classList.add('hidden');
+                });
+
+                document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+                    if (logoToDelete) {
+                        let logos = JSON.parse(localStorage.getItem(sokoStorageKey) || '[]');
+                        logos = logos.filter(l => l.id !== logoToDelete);
+                        localStorage.setItem(sokoStorageKey, JSON.stringify(logos));
+                        
+                        document.getElementById('confirmModal').classList.add('hidden');
+                        logoToDelete = null;
+                        renderGallery();
+                        showToast('ပြခန်းမှ ဖျက်ပစ်လိုက်ပါပြီ။');
+                    }
+                });
+
+                // --- Gallery Logic ---
+                function renderGallery() {
+                    const grid = document.getElementById('galleryGrid');
+                    const countLabel = document.getElementById('logoCount');
+                    const logos = JSON.parse(localStorage.getItem(sokoStorageKey) || '[]');
+                    
+                    countLabel.textContent = `စုစုပေါင်း: ${logos.length} ပုံ`;
+
+                    if (logos.length === 0) {
+                        grid.innerHTML = `
+                            <div class="col-span-full py-16 text-center bg-white rounded-xl border border-dashed border-gray-300">
+                                <span class="text-4xl block mb-2">📭</span>
+                                <p class="text-gray-500 font-semibold">သိမ်းဆည်းထားသော လိုဂို မရှိသေးပါ။</p>
+                                <button onclick="document.getElementById('navCreate').click()" class="mt-4 text-indigo-600 hover:underline">ယခုပင် စတင်ဖန်တီးမည်</button>
+                            </div>`;
+                        return;
+                    }
+
+                    grid.innerHTML = logos.map(logo => `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition relative group flex flex-col">
+                            <div class="w-full aspect-square bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center p-2 mb-3">
+                                <img src="${logo.image}" alt="${logo.name}" class="max-w-full max-h-full object-contain">
+                            </div>
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="overflow-hidden">
+                                    <h4 class="font-bold text-gray-800 truncate" title="${logo.name}">${logo.name}</h4>
+                                    <p class="text-xs text-gray-400">${logo.date}</p>
+                                </div>
+                                <button onclick="requestDelete(${logo.id})" class="text-gray-400 hover:text-red-500 transition p-1" title="ဖျက်မည်">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                </button>
+                            </div>
+                            <button onclick="downloadSavedLogo(${logo.id})" class="mt-auto block w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-center font-semibold py-2 rounded transition">
+                                ဒေါင်းလုဒ်
+                            </button>
+                        </div>
+                    `).reverse().join(''); // Show newest first
+                }
+
+                // --- Canvas Drawing Logic ---
+                function drawLogo() {
+                    const text = logoTextInput.value;
+                    const font = fontFamilyInput.value;
+                    const iconType = iconTypeInput.value;
+                    const textColor = textColorInput.value;
+                    const bgColor = bgColorInput.value;
+
+                    const width = canvas.width;
+                    const height = canvas.height;
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+
+                    // High quality smoothing
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(0, 0, width, height);
+
+                    if (aiGeneratedImage) {
+                        const scale = Math.min(width / aiGeneratedImage.width, height / aiGeneratedImage.height);
+                        const drawWidth = aiGeneratedImage.width * scale;
+                        const drawHeight = aiGeneratedImage.height * scale;
+                        const x = (width / 2) - (drawWidth / 2);
+                        const y = (height / 2) - (drawHeight / 2);
+                        ctx.drawImage(aiGeneratedImage, x, y, drawWidth, drawHeight);
+                    } else {
+                        let iconText = iconType !== 'none' ? iconMap[iconType] : '';
+                        if (iconText) {
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.font = `200px Arial`;
+                            ctx.fillText(iconText, centerX, centerY - 60);
+                        }
+                    }
+
+                    if (text.trim() !== '') {
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const sizeBase = 120;
+                        ctx.font = `bold ${sizeBase}px ${font}`;
+                        
+                        ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
+                        ctx.shadowBlur = 15;
+                        
+                        ctx.fillStyle = textColor;
+                        const yPos = aiGeneratedImage ? height - 120 : centerY + 100;
+                        ctx.fillText(text, centerX, yPos);
+                        
+                        ctx.shadowBlur = 0; 
+                    }
+                }
+
+                // --- Event Listeners ---
+                const inputs = [logoTextInput, fontFamilyInput, iconTypeInput, textColorInput, bgColorInput];
+                inputs.forEach(input => {
+                    input.addEventListener('input', drawLogo);
+                    input.addEventListener('change', drawLogo);
+                });
+
+                sketchInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) {
+                        uploadedBase64 = null;
+                        sketchPreview.classList.add('hidden');
+                        return;
+                    }
+                    uploadedMimeType = file.type;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target.result;
+                        uploadedBase64 = dataUrl.split(',')[1];
+                        sketchPreview.src = dataUrl;
+                        sketchPreview.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                clearAiBtn.addEventListener('click', () => {
+                    aiGeneratedImage = null;
+                    clearAiBtn.classList.add('hidden');
+                    drawLogo();
+                });
+
+                // --- API & Generation ---
+                async function fetchWithBackoff(url, options, maxRetries = 3) {
+                    let retries = 0;
+                    const delays = [1000, 2000, 4000];
+                    while (true) {
+                        try {
+                            const response = await fetch(url, options);
+                            const data = await response.json();
+                            if (!response.ok) {
+                                if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+                                    throw new Error(data.error?.message || `Error: ${response.status}`);
+                                }
+                                throw new Error(data.error?.message || `HTTP error! status: ${response.status}`);
+                            }
+                            return data;
+                        } catch (error) {
+                            if (retries >= maxRetries || error.message.includes("Error: 400")) {
+                                throw error;
+                            }
+                            await new Promise(resolve => setTimeout(resolve, delays[retries]));
+                            retries++;
+                        }
+                    }
+                }
+
+                generateAiBtn.addEventListener('click', async () => {
+                    if (!uploadedBase64) {
+                        showError("ကျေးဇူးပြု၍ ပုံကြမ်း (Sketch) အရင်ထည့်သွင်းပေးပါ။");
+                        return;
+                    }
+
+                    hideError();
+                    generateAiBtn.disabled = true;
+                    generateAiBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    aiLoading.classList.remove('hidden');
+
+                    const userPrompt = aiPromptInput.value || "Make it professional and high quality.";
+                    const selectedStyle = aiStyleInput.value;
+                    
+                    const fullPrompt = `Create a masterpiece, highly detailed, professional logo design based closely on the provided sketch. Logo Style: ${selectedStyle}. User Request: ${userPrompt}. IMPORTANT STRICT RULES: The image MUST be a centered logo, isolated on a clean background, award-winning quality, and absolutely NO text inside the generated logo symbol.`;
+                    
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+                    
+                    const payload = {
+                        contents: [{
+                            parts: [
+                                { text: fullPrompt },
+                                { inlineData: { mimeType: uploadedMimeType, data: uploadedBase64 } }
+                            ]
+                        }],
+                        generationConfig: {
+                            responseModalities: ["TEXT", "IMAGE"]
+                        }
+                    };
+
+                    try {
+                        const result = await fetchWithBackoff(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const generatedBase64 = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                        if (generatedBase64) {
+                            const img = new Image();
+                            img.onload = () => {
+                                aiGeneratedImage = img;
+                                clearAiBtn.classList.remove('hidden');
+                                drawLogo();
+                                generateAiBtn.disabled = false;
+                                generateAiBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                aiLoading.classList.add('hidden');
+                            };
+                            img.onerror = () => { throw new Error("ပုံဖော်ပြရာတွင် အခက်အခဲရှိနေပါသည်။"); };
+                            img.src = "data:image/jpeg;base64," + generatedBase64;
+                        } else {
+                            throw new Error("ပုံဖန်တီးခြင်း မအောင်မြင်ပါ။ နောက်တစ်ကြိမ် ထပ်ကြိုးစားကြည့်ပါ။");
+                        }
+                    } catch (error) {
+                        showError(error.message || "အင်တာနက် သို့မဟုတ် ဆာဗာ ချို့ယွင်းချက်ဖြစ်ပွားနေပါသည်။");
+                        generateAiBtn.disabled = false;
+                        generateAiBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        aiLoading.classList.add('hidden');
+                    }
+                });
+
+                function showError(msg) {
+                    errorText.textContent = msg;
+                    errorBox.classList.remove('hidden');
+                }
+                function hideError() {
+                    errorBox.classList.add('hidden');
+                    errorText.textContent = "";
+                }
+
+                // --- Downloads & Saving ---
+                downloadBtn.addEventListener('click', async () => {
+                    const filename = `${logoTextInput.value.trim() || 'soko-logo'}.png`;
+                    const dataUrl = canvas.toDataURL('image/png', 1.0); // Highest quality
+                    
+                    try {
+                        const res = await fetch(dataUrl);
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    } catch (e) {
+                        const link = document.createElement('a');
+                        link.download = filename;
+                        link.href = dataUrl;
+                        link.click();
+                    }
+                });
+
+                saveGalleryBtn.addEventListener('click', () => {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const name = logoTextInput.value.trim() || 'SOKO Logo';
+                    const logos = JSON.parse(localStorage.getItem(sokoStorageKey) || '[]');
+                    
+                    const dateStr = new Date().toLocaleDateString('my-MM', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                    logos.push({
+                        id: Date.now(),
+                        name: name,
+                        image: dataUrl,
+                        date: dateStr
+                    });
+
+                    try {
+                        localStorage.setItem(sokoStorageKey, JSON.stringify(logos));
+                        showToast('SOKO ပြခန်းသို့ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ!');
+                        setTimeout(showHome, 1000); // Switch to gallery after saving
+                    } catch (e) {
+                        // Handle LocalStorage Quota Exceeded
+                        showToast('Storage ပြည့်နေပါသည်။ ပြခန်းမှ အဟောင်းများကို အရင်ဖျက်ပေးပါ။', true);
+                    }
+                });
+
+                // Init Actions
+                drawLogo();
+                setTimeout(drawLogo, 500);
+                renderGallery(); // Load gallery initially
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initApp);
+            } else {
+                initApp();
+            }
+        })();
     </script>
 </body>
 </html>
