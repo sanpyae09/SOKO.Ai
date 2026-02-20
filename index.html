@@ -92,7 +92,7 @@
                     <h2 class="text-xl font-bold border-b pb-2 text-indigo-700">🤖 AI ဖြင့် ပုံကြမ်းကို ပြင်ဆင်မည်</h2>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">ပုံကြမ်း (Sketch) ထည့်ရန်</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">ပုံကြမ်း (Sketch) ထည့်ရန် <span class="text-xs text-gray-400 font-normal">(မထည့်လည်းရသည်)</span></label>
                         <input type="file" id="sketchInput" accept="image/*" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
                         <img id="sketchPreview" class="mt-2 hidden max-h-32 rounded border border-gray-200 mx-auto" alt="Sketch Preview">
                     </div>
@@ -543,8 +543,8 @@
                 }
 
                 generateAiBtn.addEventListener('click', async () => {
-                    if (!uploadedBase64) {
-                        showError("ကျေးဇူးပြု၍ ပုံကြမ်း (Sketch) အရင်ထည့်သွင်းပေးပါ။");
+                    if (!uploadedBase64 && !aiPromptInput.value.trim()) {
+                        showError("ကျေးဇူးပြု၍ ပုံကြမ်း (Sketch) သို့မဟုတ် စိတ်ကြိုက် ပုံစံ (Prompt) တစ်ခုခု ထည့်သွင်းပေးပါ။");
                         return;
                     }
 
@@ -556,32 +556,50 @@
                     const userPrompt = aiPromptInput.value || "Make it professional and high quality.";
                     const selectedStyle = aiStyleInput.value;
                     
-                    const fullPrompt = `Create a masterpiece, highly detailed, professional logo design based closely on the provided sketch. Logo Style: ${selectedStyle}. User Request: ${userPrompt}. IMPORTANT STRICT RULES: The image MUST be a centered logo, isolated on a clean background, award-winning quality, and absolutely NO text inside the generated logo symbol.`;
-                    
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-                    
-                    const payload = {
-                        contents: [{
-                            parts: [
-                                { text: fullPrompt },
-                                { inlineData: { mimeType: uploadedMimeType, data: uploadedBase64 } }
-                            ]
-                        }],
-                        generationConfig: {
-                            responseModalities: ["TEXT", "IMAGE"]
-                        }
-                    };
-
                     try {
+                        let sketchDesc = "";
+                        
+                        // အဆင့် ၁: ပုံကြမ်း (Sketch) ပါဝင်ပါက Gemini 1.5 Flash ဖြင့် ပုံကိုဖတ်ရှုခိုင်းခြင်း
+                        if (uploadedBase64) {
+                            try {
+                                const visionUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                                const visionPayload = {
+                                    contents: [{
+                                        parts: [
+                                            { text: "Briefly describe the main object, shape, and layout of this sketch. Ignore text. Focus only on the visual concept for a logo." },
+                                            { inlineData: { mimeType: uploadedMimeType, data: uploadedBase64 } }
+                                        ]
+                                    }]
+                                };
+                                
+                                const vRes = await fetchWithBackoff(visionUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(visionPayload)
+                                });
+                                sketchDesc = vRes.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                            } catch(e) {
+                                console.warn("ပုံကြမ်းဖတ်ရှုခြင်း အခက်အခဲဖြစ်ပါသည်၊ Prompt ဖြင့်သာ ဆက်လက်ဖန်တီးပါမည်။", e);
+                            }
+                        }
+
+                        // အဆင့် ၂: Public API ဖြစ်သော Imagen 3 ကို အသုံးပြု၍ လိုဂိုပုံ ဖန်တီးခြင်း
+                        const fullPrompt = `Create a masterpiece, highly detailed, professional logo design. Style: ${selectedStyle}. User Request: ${userPrompt}. ${sketchDesc ? 'The logo must feature this concept: ' + sketchDesc : ''} IMPORTANT STRICT RULES: The image MUST be a centered logo, isolated on a clean solid white background, award-winning quality, and absolutely NO text inside the generated logo symbol.`;
+                        
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
+                        const payload = {
+                            instances: [{ prompt: fullPrompt }],
+                            parameters: { sampleCount: 1, aspectRatio: "1:1" }
+                        };
+
                         const result = await fetchWithBackoff(url, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
 
-                        const imagePart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData;
-                        const generatedBase64 = imagePart?.data;
-                        const mimeType = imagePart?.mimeType || "image/png";
+                        const generatedBase64 = result.predictions?.[0]?.bytesBase64Encoded;
+                        const mimeType = result.predictions?.[0]?.mimeType || "image/jpeg";
 
                         if (generatedBase64) {
                             const img = new Image();
@@ -682,5 +700,6 @@
     </script>
 </body>
 </html>
+
 
 
