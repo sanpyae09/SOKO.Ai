@@ -58,8 +58,6 @@
         
         <!-- ================= HOME VIEW ================= -->
         <div id="homeView" class="space-y-12 animate-fade-in">
-            
-            <!-- Hero Section -->
             <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200 px-4">
                 <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">SOKO မှ ကြိုဆိုပါသည်</h2>
                 <p class="text-gray-600 mb-8 max-w-2xl mx-auto text-lg">သင့်လုပ်ငန်းနှင့် အမှတ်တံဆိပ်အတွက် ထူးခြားဆန်းသစ်သော လိုဂိုများကို AI နည်းပညာဖြင့် အလွယ်တကူ ဖန်တီးသိမ်းဆည်းလိုက်ပါ။</p>
@@ -68,16 +66,12 @@
                 </button>
             </div>
 
-            <!-- Gallery Section -->
             <div>
                 <div class="flex items-center justify-between mb-6 border-b pb-2">
                     <h3 class="text-2xl font-bold text-gray-800">မိမိဖန်တီးထားသော လိုဂိုများ</h3>
                     <span class="text-sm text-gray-500" id="logoCount">စုစုပေါင်း: ၀ ပုံ</span>
                 </div>
-                
-                <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    <!-- Gallery items will be injected here by JS -->
-                </div>
+                <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
             </div>
         </div>
 
@@ -89,10 +83,10 @@
                 
                 <!-- AI Generation Section -->
                 <div class="bg-white rounded-xl shadow-lg p-6 space-y-4 border-t-4 border-indigo-500">
-                    <h2 class="text-xl font-bold border-b pb-2 text-indigo-700">🤖 AI ဖြင့် ပုံကြမ်းကို ပြင်ဆင်မည်</h2>
+                    <h2 class="text-xl font-bold border-b pb-2 text-indigo-700">🤖 AI ဖြင့် ဖန်တီးမည်</h2>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">ပုံကြမ်း (Sketch) ထည့်ရန် <span class="text-xs text-gray-400 font-normal">(မထည့်လည်းရသည်)</span></label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">ပုံကြမ်း (Sketch) <span class="text-xs text-gray-400 font-normal">(မထည့်လည်းရသည်)</span></label>
                         <input type="file" id="sketchInput" accept="image/*" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
                         <img id="sketchPreview" class="mt-2 hidden max-h-32 rounded border border-gray-200 mx-auto" alt="Sketch Preview">
                     </div>
@@ -100,7 +94,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">ဒီဇိုင်း စတိုင် (Style)</label>
                         <select id="aiStyle" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                            <option value="flat minimalist vector art, clean background">ရိုးရှင်းသော (Minimalist)</option>
+                            <option value="flat minimalist vector art, solid background">ရိုးရှင်းသော (Minimalist)</option>
                             <option value="3D rendered, highly detailed, glossy">3D ပုံစံ (3D Render)</option>
                             <option value="cute mascot character, vibrant colors">ကာတွန်း/အရုပ် (Mascot)</option>
                             <option value="vintage retro hand-drawn badge">ရှေးဟောင်း (Vintage)</option>
@@ -110,7 +104,7 @@
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">စိတ်ကြိုက် ပုံစံရေးပြရန် (Prompt)</label>
-                        <textarea id="aiPrompt" rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans text-sm" placeholder="ဥပမာ - Blue and white color scheme..."></textarea>
+                        <textarea id="aiPrompt" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans text-sm" placeholder="ဥပမာ - Blue and white color scheme, focus on a bird looking up"></textarea>
                     </div>
 
                     <button id="generateAiBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow transition flex justify-center items-center gap-2">
@@ -119,7 +113,7 @@
                     
                     <div id="aiLoading" class="hidden flex items-center justify-center space-x-2 text-indigo-600 font-semibold py-2">
                         <div class="loader"></div>
-                        <span>ဖန်တီးနေပါသည်...</span>
+                        <span>ဖန်တီးနေပါသည်... စောင့်ပါ...</span>
                     </div>
                     
                     <div id="errorBox" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm" role="alert">
@@ -209,12 +203,11 @@
         <p class="text-sm">© 2026 SOKO AI Logo Maker. All rights reserved.</p>
     </footer>
 
-    <!-- Toast Notification -->
+    <!-- Toast & Modals -->
     <div id="toast" class="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0 z-50 flex items-center space-x-2">
         <span id="toastMsg">အောင်မြင်ပါသည်!</span>
     </div>
 
-    <!-- Confirm Delete Modal -->
     <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
             <h3 class="text-xl font-bold mb-2 text-gray-800">ဖျက်ရန် သေချာပါသလား?</h3>
@@ -229,8 +222,8 @@
     <!-- JavaScript Logic -->
     <script>
         (function() {
-            // Hardcoded API Key as requested
-            const apiKey = "AIzaSyDyWQIQcLlI34-x7TQMwi2-YeFO3BoPhWs"; 
+            // Updated New API Key
+            const apiKey = "AIzaSyC2PGcoNymNRoTu8z69dxsoP6PjNyb0P2U"; 
             const sokoStorageKey = 'soko_saved_logos';
 
             function initApp() {
@@ -238,14 +231,12 @@
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 
-                // View Management Elements
                 const homeView = document.getElementById('homeView');
                 const editorView = document.getElementById('editorView');
                 const navHome = document.getElementById('navHome');
                 const navCreate = document.getElementById('navCreate');
                 const startCreateBtn = document.getElementById('startCreateBtn');
                 
-                // UI Elements - Text/Style
                 const logoTextInput = document.getElementById('logoText');
                 const fontFamilyInput = document.getElementById('fontFamily');
                 const iconTypeInput = document.getElementById('iconType');
@@ -254,7 +245,6 @@
                 const downloadBtn = document.getElementById('downloadBtn');
                 const saveGalleryBtn = document.getElementById('saveGalleryBtn');
 
-                // UI Elements - AI
                 const sketchInput = document.getElementById('sketchInput');
                 const sketchPreview = document.getElementById('sketchPreview');
                 const aiStyleInput = document.getElementById('aiStyle');
@@ -265,7 +255,6 @@
                 const errorText = document.getElementById('errorText');
                 const clearAiBtn = document.getElementById('clearAiBtn');
 
-                // State
                 let uploadedBase64 = null;
                 let uploadedMimeType = null;
                 let aiGeneratedImage = null;
@@ -276,12 +265,10 @@
                     'rocket': '🚀', 'coffee': '☕'
                 };
 
-                // --- View Routing ---
                 function showHome() {
                     homeView.classList.remove('hidden');
                     editorView.classList.remove('flex');
                     editorView.classList.add('hidden');
-                    
                     navHome.classList.replace('border-transparent', 'border-white');
                     navCreate.classList.replace('border-white', 'border-transparent');
                     renderGallery();
@@ -291,7 +278,6 @@
                     homeView.classList.add('hidden');
                     editorView.classList.remove('hidden');
                     editorView.classList.add('flex');
-                    
                     navCreate.classList.replace('border-transparent', 'border-white');
                     navHome.classList.replace('border-white', 'border-transparent');
                     drawLogo();
@@ -301,23 +287,17 @@
                 navCreate.addEventListener('click', showEditor);
                 startCreateBtn.addEventListener('click', showEditor);
 
-                // --- Toast & Modal Logic ---
                 function showToast(msg, isError = false) {
                     const toast = document.getElementById('toast');
                     const toastMsg = document.getElementById('toastMsg');
                     toastMsg.textContent = msg;
-                    
                     if(isError) {
                         toast.classList.replace('bg-green-600', 'bg-red-600');
                     } else {
                         toast.classList.replace('bg-red-600', 'bg-green-600');
                     }
-
                     toast.classList.remove('translate-y-20', 'opacity-0');
-                    
-                    setTimeout(() => {
-                        toast.classList.add('translate-y-20', 'opacity-0');
-                    }, 3000);
+                    setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
                 }
 
                 window.requestDelete = function(id) {
@@ -359,7 +339,6 @@
                         let logos = JSON.parse(localStorage.getItem(sokoStorageKey) || '[]');
                         logos = logos.filter(l => l.id !== logoToDelete);
                         localStorage.setItem(sokoStorageKey, JSON.stringify(logos));
-                        
                         document.getElementById('confirmModal').classList.add('hidden');
                         logoToDelete = null;
                         renderGallery();
@@ -367,7 +346,6 @@
                     }
                 });
 
-                // --- Gallery Logic ---
                 function renderGallery() {
                     const grid = document.getElementById('galleryGrid');
                     const countLabel = document.getElementById('logoCount');
@@ -406,7 +384,6 @@
                     `).reverse().join('');
                 }
 
-                // --- Canvas Drawing Logic ---
                 function drawLogo() {
                     const text = logoTextInput.value;
                     const font = fontFamilyInput.value;
@@ -459,7 +436,6 @@
                     }
                 }
 
-                // --- Event Listeners ---
                 const inputs = [logoTextInput, fontFamilyInput, iconTypeInput, textColorInput, bgColorInput];
                 inputs.forEach(input => {
                     input.addEventListener('input', drawLogo);
@@ -511,7 +487,6 @@
                     drawLogo();
                 });
 
-                // --- API & Generation ---
                 async function fetchWithBackoff(url, options, maxRetries = 3) {
                     let retries = 0;
                     const delays = [1000, 2000, 4000];
@@ -583,7 +558,7 @@
                             }
                         }
 
-                        // အဆင့် ၂: Public API ဖြစ်သော Imagen 3 ကို အသုံးပြု၍ လိုဂိုပုံ ဖန်တီးခြင်း
+                        // အဆင့် ၂: Public API တွင်ရရှိနိုင်သော Imagen 3 ကို အသုံးပြု၍ လိုဂိုပုံ ဖန်တီးခြင်း
                         const fullPrompt = `Create a masterpiece, highly detailed, professional logo design. Style: ${selectedStyle}. User Request: ${userPrompt}. ${sketchDesc ? 'The logo must feature this concept: ' + sketchDesc : ''} IMPORTANT STRICT RULES: The image MUST be a centered logo, isolated on a clean solid white background, award-winning quality, and absolutely NO text inside the generated logo symbol.`;
                         
                         const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
@@ -619,7 +594,7 @@
                             };
                             img.src = `data:${mimeType};base64,${generatedBase64}`;
                         } else {
-                            throw new Error("ပုံဖန်တီးခြင်း မအောင်မြင်ပါ။ နောက်တစ်ကြိမ် ထပ်ကြိုးစားကြည့်ပါ။ (API Error)");
+                            throw new Error("ပုံဖန်တီးခြင်း မအောင်မြင်ပါ။ နောက်တစ်ကြိမ် ထပ်ကြိုးစားကြည့်ပါ။");
                         }
                     } catch (error) {
                         showError(error.message || "အင်တာနက် သို့မဟုတ် ဆာဗာ ချို့ယွင်းချက်ဖြစ်ပွားနေပါသည်။");
@@ -638,7 +613,6 @@
                     errorText.textContent = "";
                 }
 
-                // --- Downloads & Saving ---
                 downloadBtn.addEventListener('click', async () => {
                     const filename = `${logoTextInput.value.trim() || 'soko-logo'}.png`;
                     const dataUrl = canvas.toDataURL('image/png', 1.0);
@@ -666,7 +640,6 @@
                     const dataUrl = canvas.toDataURL('image/png');
                     const name = logoTextInput.value.trim() || 'SOKO Logo';
                     const logos = JSON.parse(localStorage.getItem(sokoStorageKey) || '[]');
-                    
                     const dateStr = new Date().toLocaleDateString('my-MM', { year: 'numeric', month: 'short', day: 'numeric' });
 
                     logos.push({
@@ -685,7 +658,6 @@
                     }
                 });
 
-                // Init Actions
                 drawLogo();
                 setTimeout(drawLogo, 500);
                 renderGallery();
@@ -700,6 +672,5 @@
     </script>
 </body>
 </html>
-
 
 
