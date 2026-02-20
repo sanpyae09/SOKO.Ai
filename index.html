@@ -97,7 +97,6 @@
                         <img id="sketchPreview" class="mt-2 hidden max-h-32 rounded border border-gray-200 mx-auto" alt="Sketch Preview">
                     </div>
 
-                    <!-- Enhanced Style Dropdown added -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">ဒီဇိုင်း စတိုင် (Style)</label>
                         <select id="aiStyle" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
@@ -230,7 +229,8 @@
     <!-- JavaScript Logic -->
     <script>
         (function() {
-            const apiKey = ""; 
+            // Hardcoded API Key as requested
+            const apiKey = "AIzaSyDyWQIQcLlI34-x7TQMwi2-YeFO3BoPhWs"; 
             const sokoStorageKey = 'soko_saved_logos';
 
             function initApp() {
@@ -320,13 +320,11 @@
                     }, 3000);
                 }
 
-                // Global delete request for inline onclick
                 window.requestDelete = function(id) {
                     logoToDelete = id;
                     document.getElementById('confirmModal').classList.remove('hidden');
                 };
 
-                // Global download for gallery items
                 window.downloadSavedLogo = async function(id) {
                     const logos = JSON.parse(localStorage.getItem(sokoStorageKey) || '[]');
                     const logo = logos.find(l => l.id === id);
@@ -343,7 +341,6 @@
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(url);
                         } catch (e) {
-                            // Fallback
                             const link = document.createElement('a');
                             link.href = logo.image;
                             link.download = `${logo.name}.png`;
@@ -406,7 +403,7 @@
                                 ဒေါင်းလုဒ်
                             </button>
                         </div>
-                    `).reverse().join(''); // Show newest first
+                    `).reverse().join('');
                 }
 
                 // --- Canvas Drawing Logic ---
@@ -422,7 +419,6 @@
                     const centerX = width / 2;
                     const centerY = height / 2;
 
-                    // High quality smoothing
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
 
@@ -481,7 +477,6 @@
                     reader.onload = (event) => {
                         const img = new Image();
                         img.onload = () => {
-                            // Resize to max 768px for the API to process efficiently and prevent payload errors
                             const MAX_SIZE = 768;
                             let w = img.width;
                             let h = img.height;
@@ -495,7 +490,6 @@
                             tempCanvas.height = h;
                             const tCtx = tempCanvas.getContext('2d');
                             
-                            // Fill white background in case of transparent PNGs
                             tCtx.fillStyle = '#ffffff';
                             tCtx.fillRect(0, 0, w, h);
                             tCtx.drawImage(img, 0, 0, w, h);
@@ -629,7 +623,7 @@
                 // --- Downloads & Saving ---
                 downloadBtn.addEventListener('click', async () => {
                     const filename = `${logoTextInput.value.trim() || 'soko-logo'}.png`;
-                    const dataUrl = canvas.toDataURL('image/png', 1.0); // Highest quality
+                    const dataUrl = canvas.toDataURL('image/png', 1.0);
                     
                     try {
                         const res = await fetch(dataUrl);
@@ -667,9 +661,8 @@
                     try {
                         localStorage.setItem(sokoStorageKey, JSON.stringify(logos));
                         showToast('SOKO ပြခန်းသို့ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ!');
-                        setTimeout(showHome, 1000); // Switch to gallery after saving
+                        setTimeout(showHome, 1000);
                     } catch (e) {
-                        // Handle LocalStorage Quota Exceeded
                         showToast('Storage ပြည့်နေပါသည်။ ပြခန်းမှ အဟောင်းများကို အရင်ဖျက်ပေးပါ။', true);
                     }
                 });
@@ -677,7 +670,7 @@
                 // Init Actions
                 drawLogo();
                 setTimeout(drawLogo, 500);
-                renderGallery(); // Load gallery initially
+                renderGallery();
             }
 
             if (document.readyState === 'loading') {
@@ -689,7 +682,5 @@
     </script>
 </body>
 </html>
-
-
 
 
